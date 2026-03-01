@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A secure, offline-capable password generator with the power of pwgen CLI">
+  <meta name="theme-color" content="#2563eb">
+
+  <title>Password Generator</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PwGen">
+</head>
+<body class="min-h-screen">
+  <!-- Loading Placeholder -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <svg class="loading-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading...</p>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div id="app" class="min-h-screen flex flex-col hidden">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 safe-top">
+      <div class="max-w-8xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-primary-600 dark:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <h1 class="text-xl font-bold">Password Generator</h1>
+        </div>
+
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle theme">
+          <svg id="theme-icon-light" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="theme-icon-dark" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+      <div class="max-w-8xl mx-auto px-4">
+        <div class="flex" role="tablist">
+          <button class="tab tab-active" role="tab" data-tab="generate" aria-selected="true">
+            Generate
+          </button>
+          <button class="tab" role="tab" data-tab="saved" aria-selected="false">
+            Saved
+          </button>
+          <button class="tab" role="tab" data-tab="settings" aria-selected="false">
+            Settings
+          </button>
+          <button class="tab" role="tab" data-tab="about" aria-selected="false">
+            About
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-gray-50 dark:bg-gray-950">
+      <div class="max-w-8xl mx-auto px-4 py-6">
+
+        <!-- Generate Tab -->
+        <div id="tab-generate" class="tab-content" role="tabpanel">
+          <div class="max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Generate Secure Passwords</h2>
+
+            <!-- Password Display -->
+            <div class="card p-6 mb-6">
+              <div class="flex items-center gap-2 mb-3">
+                <input
+                  type="text"
+                  id="generated-password"
+                  class="input font-mono text-lg flex-1"
+                  value="••••••••••••••••"
+                  readonly
+                />
+                <button id="btn-toggle-visibility" class="btn-icon" aria-label="Toggle password visibility">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+                <button id="btn-copy" class="btn-icon" aria-label="Copy to clipboard">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Strength Indicator -->
+              <div>
+                <div class="flex items-center justify-between text-sm mb-1">
+                  <span class="text-gray-600 dark:text-gray-400">Strength</span>
+                  <span id="strength-text" class="font-medium text-gray-900 dark:text-gray-100">Strong (87%)</span>
+                </div>
+                <div class="strength-bar">
+                  <div id="strength-fill" class="strength-fill strength-strong" style="width: 87%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Generator Options -->
+            <div class="card p-6 mb-6">
+              <h3 class="text-lg font-semibold mb-4">Configuration</h3>
+
+              <!-- Password Length -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">
+                  Password Length: <span id="length-value" class="text-primary-600 dark:text-primary-400">16</span>
+                </label>
+                <input type="range" id="password-length" min="4" max="128" value="16" class="slider" />
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>4</span>
+                  <span>128</span>
+                </div>
+              </div>
+
+              <!-- Character Options -->
+              <div class="space-y-3">
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-lowercase" class="mr-3" checked />
+                  <span>Include Lowercase (a-z)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-capitals" class="mr-3" checked />
+                  <span>Include Capitals (A-Z)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-numerals" class="mr-3" checked />
+                  <span>Include Numbers (0-9)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-symbols" class="mr-3" checked />
+                  <span>Include Symbols (!@#$%^&*)</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-pronounceable" class="mr-3" />
+                  <span>Pronounceable</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="opt-ambiguous" class="mr-3" />
+                  <span>Avoid Ambiguous (0, O, l, 1)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+              <button id="btn-generate" class="btn btn-primary flex-1">
+                Generate Password
+              </button>
+              <button id="btn-save" class="btn btn-secondary flex-1">
+                Save with Label...
+              </button>
+            </div>
+
+            <!-- Multiple Passwords Container -->
+            <div id="multiple-passwords" class="hidden mt-6">
+              <h3 class="text-lg font-semibold mb-3">Generated Passwords</h3>
+              <div id="password-list" class="space-y-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saved Tab -->
+        <div id="tab-saved" class="tab-content hidden" role="tabpanel">
+          <div class="max-w-4xl mx-auto">
+
+            <!-- Header with count -->
+            <div class="flex items-center gap-3 mb-6">
+              <h2 class="text-2xl font-bold">Saved Passwords</h2>
+              <span id="saved-count" class="badge badge-count">0</span>
+            </div>
+
+            <!-- Search bar -->
+            <div class="search-input-wrapper mb-4">
+              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                id="saved-search"
+                class="input"
+                placeholder="Search by label..."
+              />
+            </div>
+
+            <!-- Filter/sort bar -->
+            <div class="flex items-center gap-3 mb-4 flex-wrap">
+              <div class="flex items-center gap-2">
+                <label for="saved-filter-strength" class="text-sm text-gray-600 dark:text-gray-400">Strength:</label>
+                <select id="saved-filter-strength" class="select">
+                  <option value="all">All</option>
+                  <option value="weak">Weak</option>
+                  <option value="fair">Fair</option>
+                  <option value="good">Good</option>
+                  <option value="strong">Strong</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="saved-sort" class="text-sm text-gray-600 dark:text-gray-400">Sort:</label>
+                <select id="saved-sort" class="select">
+                  <option value="createdAt-desc">Newest first</option>
+                  <option value="createdAt-asc">Oldest first</option>
+                  <option value="label-asc">Name A-Z</option>
+                  <option value="label-desc">Name Z-A</option>
+                  <option value="strength-desc">Strongest first</option>
+                  <option value="strength-asc">Weakest first</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Password cards container -->
+            <div id="saved-passwords-list" class="space-y-3"></div>
+
+            <!-- Empty state -->
+            <div id="saved-empty-state" class="empty-state hidden">
+              <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <p class="text-lg font-medium mb-1">No saved passwords yet</p>
+              <p class="text-sm mb-4">Generate a password and save it with a label to get started.</p>
+              <button id="btn-go-generate" class="btn btn-primary btn-sm">Go to Generate</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Dynamic modals are rendered by JS -->
+
+        <!-- Settings Tab -->
+        <div id="tab-settings" class="tab-content hidden" role="tabpanel">
+          <div class="max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Settings</h2>
+
+            <!-- Theme Section -->
+            <div class="settings-section">
+              <h3 class="settings-section-title">Appearance</h3>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Theme</div>
+                  <div class="settings-description">Choose light, dark, or match your system preference</div>
+                </div>
+                <div class="theme-options" id="theme-selector">
+                  <button class="theme-option" data-theme="light">Light</button>
+                  <button class="theme-option" data-theme="dark">Dark</button>
+                  <button class="theme-option active" data-theme="auto">Auto</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Default Generator Preferences -->
+            <div class="settings-section">
+              <h3 class="settings-section-title">Default Generator Options</h3>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Password Length</div>
+                  <div class="settings-description">Default length for new passwords</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="range" id="settings-default-length" min="4" max="128" value="16" style="width: 8rem;" />
+                  <span id="settings-length-display" class="text-sm font-mono" style="min-width: 2rem; text-align: right;">16</span>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Include Lowercase (a-z)</div>
+                <input type="checkbox" id="settings-lowercase" checked />
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Include Capitals (A-Z)</div>
+                <input type="checkbox" id="settings-capitals" checked />
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Include Numbers (0-9)</div>
+                <input type="checkbox" id="settings-numerals" checked />
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Include Symbols (!@#$%^&*)</div>
+                <input type="checkbox" id="settings-symbols" checked />
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Pronounceable</div>
+                <input type="checkbox" id="settings-pronounceable" />
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Avoid Ambiguous (0, O, l, 1)</div>
+                <input type="checkbox" id="settings-ambiguous" />
+              </div>
+            </div>
+
+            <!-- Expiration Settings -->
+            <div class="settings-section">
+              <h3 class="settings-section-title">Password Expiration</h3>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Enable expiration reminders</div>
+                  <div class="settings-description">Show warnings when passwords are near expiry</div>
+                </div>
+                <input type="checkbox" id="settings-expiration-reminders" />
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Default expiration (days)</div>
+                  <div class="settings-description">Auto-set expiration when saving passwords (0 = disabled)</div>
+                </div>
+                <input type="number" id="settings-expiration-days" class="input" value="0" min="0" max="365" style="width: 5rem; text-align: right;" />
+              </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="settings-section">
+              <h3 class="settings-section-title">Data Management</h3>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Export passwords</div>
+                  <div class="settings-description">Download all saved passwords as a JSON file</div>
+                </div>
+                <button id="btn-export" class="btn btn-secondary btn-sm">Export</button>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label">Import passwords</div>
+                  <div class="settings-description">Load passwords from a previously exported JSON file</div>
+                </div>
+                <div class="file-input-wrapper">
+                  <button class="btn btn-secondary btn-sm">Import</button>
+                  <input type="file" id="btn-import" accept=".json,application/json" />
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-label" style="color: rgb(220 38 38);">Delete all passwords</div>
+                  <div class="settings-description">Permanently remove all saved passwords</div>
+                </div>
+                <button id="btn-clear-all" class="btn-danger btn-sm">Clear All</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- About Tab -->
+        <div id="tab-about" class="tab-content hidden" role="tabpanel">
+          <div class="max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">About</h2>
+
+            <!-- App Info -->
+            <div class="about-card mb-6">
+              <div class="about-app-header">
+                <svg class="about-app-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <div>
+                  <h3 class="about-app-name">PwGen</h3>
+                  <span class="about-app-version">v1.0.0</span>
+                </div>
+              </div>
+              <p class="about-app-description">
+                A secure, offline-capable password generator that brings the power of the <code>pwgen</code> command-line tool to your browser. All passwords are generated and stored locally — no data ever leaves your device.
+              </p>
+              <div class="about-features">
+                <div class="about-feature">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  <span>Offline-first PWA</span>
+                </div>
+                <div class="about-feature">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  <span>Cryptographically secure</span>
+                </div>
+                <div class="about-feature">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  <span>100% client-side</span>
+                </div>
+              </div>
+              <a href="https://github.com/SaqrWare/pwgen-pwa" target="_blank" rel="noopener noreferrer" class="about-repo-link">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                <span>View on GitHub</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+              </a>
+            </div>
+
+            <!-- Developer Info -->
+            <div class="about-card">
+              <h3 class="about-section-title">Developer</h3>
+              <div class="about-developer">
+                <div class="about-dev-avatar">SW</div>
+                <div>
+                  <div class="about-dev-name">Omar Saqr</div>
+                  <a href="https://saqrware.com" target="_blank" rel="noopener noreferrer" class="about-dev-link">
+                    saqrware.com
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                </div>
+              </div>
+
+              <div class="about-socials">
+                <a href="https://github.com/saqrware" target="_blank" rel="noopener noreferrer" class="about-social-btn" title="GitHub">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+                <a href="https://linkedin.com/in/saqrware" target="_blank" rel="noopener noreferrer" class="about-social-btn" title="LinkedIn">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                </a>
+                <a href="https://facebook.com/saqrware" target="_blank" rel="noopener noreferrer" class="about-social-btn" title="Facebook">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a href="https://instagram.com/saqrware" target="_blank" rel="noopener noreferrer" class="about-social-btn" title="Instagram">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </a>
+                <a href="https://t.me/saqrware" target="_blank" rel="noopener noreferrer" class="about-social-btn" title="Telegram">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Install as App -->
+            <div class="about-card mt-6">
+              <h3 class="about-section-title">Install as App</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                PwGen is a Progressive Web App — you can install it on your device for quick access and offline use.
+              </p>
+
+              <div class="install-tip">
+                <div class="install-tip-header">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 3.3l1-.7 1 .7 2.8.5-.3 1.3.8 2.4-1.2.7L12 12l-3.1-1.8-1.2-.7.8-2.4-.3-1.3 2.8-.5z"/></svg>
+                  <span class="font-semibold">Chrome / Edge (Desktop & Android)</span>
+                </div>
+                <ol class="install-steps">
+                  <li>Open PwGen in Chrome or Edge</li>
+                  <li>Click the install icon <strong>(+)</strong> in the address bar, or open the browser menu <strong>(&vellip;)</strong></li>
+                  <li>Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong></li>
+                </ol>
+              </div>
+
+              <div class="install-tip">
+                <div class="install-tip-header">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                  <span class="font-semibold">Safari (iPhone & iPad)</span>
+                </div>
+                <ol class="install-steps">
+                  <li>Open PwGen in Safari</li>
+                  <li>Tap the <strong>Share</strong> button <strong>(&#xFEFF;&#x2191;&#xFE0E;)</strong> at the bottom of the screen</li>
+                  <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                  <li>Tap <strong>"Add"</strong> in the top-right corner</li>
+                </ol>
+              </div>
+
+              <div class="install-tip">
+                <div class="install-tip-header">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 3.3l1-.7 1 .7 2.8.5-.3 1.3.8 2.4-1.2.7L12 12l-3.1-1.8-1.2-.7.8-2.4-.3-1.3 2.8-.5z"/></svg>
+                  <span class="font-semibold">Safari (macOS)</span>
+                </div>
+                <ol class="install-steps">
+                  <li>Open PwGen in Safari (macOS Sonoma or later)</li>
+                  <li>Click <strong>File</strong> in the menu bar</li>
+                  <li>Select <strong>"Add to Dock"</strong></li>
+                </ol>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 safe-bottom">
+      <div class="max-w-8xl mx-auto px-4 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p>All passwords are stored locally in your browser. No data is transmitted.</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Load Scripts -->
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
